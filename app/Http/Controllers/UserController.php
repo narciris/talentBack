@@ -10,4 +10,9 @@ class UserController extends Controller
     {
         return response()->json(['status' =>'success', 'message'=> 'Bienvenido al sistema']);
     }
+
+    public function findUser(int $id)
+    {
+        return response()->json(['status'=> 'suscces','message'=> " usuario con id {$id} encontrado",'data'=> " id: {$id}"],200);
+    }
 }

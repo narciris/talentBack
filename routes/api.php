@@ -8,4 +8,5 @@ Route::get('/user', function (Request $request) {
     return $request->user();
 })->middleware('auth:sanctum');
 
-Route::get('saludo',[UserController::class,'saludo']);
+Route::get('/saludo',[UserController::class,'saludo']);
+Route::get('/find/{id}',[UserController::class,'findUser']);
