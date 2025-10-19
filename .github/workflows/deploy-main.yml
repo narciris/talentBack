@@ -1,0 +1,36 @@
+name: Deploy Laravel 12
+
+on:
+  push:
+    branches: [ main, develop ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Deploy to EC2
+        env:
+          DEPLOY_KEY: ${{ secrets.EC2_DEPLOY_KEY }}
+          DEPLOY_HOST: ${{ secrets.EC2_HOST }}
+          DEPLOY_USER: ${{ secrets.EC2_USER }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+        run: |
+          mkdir -p ~/.ssh
+          echo "$DEPLOY_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H $DEPLOY_HOST >> ~/.ssh/known_hosts
+
+          ssh -i ~/.ssh/deploy_key $DEPLOY_USER@$DEPLOY_HOST "
+            cd $DEPLOY_PATH && \
+            git pull origin main && \
+            composer install --no-dev --prefer-dist && \
+            php artisan migrate --force && \
+            php artisan config:cache && \
+            php artisan route:cache && \
+            php artisan view:cache && \
+
+          "
