@@ -2,7 +2,7 @@ name: Deploy Laravel 12
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [ never ]
 
 jobs:
   deploy:
