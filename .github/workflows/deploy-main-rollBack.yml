@@ -73,6 +73,16 @@ jobs:
               exit 1
             fi
 
+          # Crear bootstrap/cache (OBLIGATORIO para Laravel)
+            mkdir -p bootstrap/cache
+            chmod -R 775 bootstrap/cache
+            sudo chown -R apache:apache bootstrap/cache
+
+            # Crear storage logs si no existe
+            mkdir -p storage/logs
+            chmod -R 775 storage
+            sudo chown -R apache:apache storage
+
             # Instalar dependencias
             composer install --no-dev --optimize-autoloader --quiet
 
