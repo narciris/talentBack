@@ -1,0 +1,97 @@
+name: Deploy humanator with release
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.EC2_DEPLOY_KEY }}" > ~/.ssh/ssh_key
+          chmod 600 ~/.ssh/ssh_key
+          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Deploy to EC2 with releases
+        run: |
+          TS=$(date +%Y%m%d-%H%M%S)
+          HOST=${{ secrets.EC2_HOST }}
+          USER=ec2-user
+          APP_PATH=/var/www/talenthub/talentBack
+          RELEASE_DIR=$APP_PATH/releases/${TS}
+          CURRENT_LINK=$APP_PATH/current
+          SHARED_DIR="$APP_PATH/shared"
+
+          # Crear carpeta releases y shared si no existen
+          ssh -i ~/.ssh/ssh_key $USER@$HOST "set -e; mkdir -p $APP_PATH/releases $APP_PATH/shared $APP_PATH/storage"
+
+          # Crear directorio del nuevo release
+          ssh -i ~/.ssh/ssh_key $USER@$HOST "mkdir -p $RELEASE_DIR"
+
+          # Subir código al nuevo release
+          rsync -avz -e "ssh -i ~/.ssh/ssh_key" --exclude='.git' --exclude='vendor' --exclude='node_modules' . $USER@$HOST:$RELEASE_DIR
+
+          # Instalar dependencias y preparar release
+          ssh -i ~/.ssh/ssh_key $USER@$HOST bash <<REMOTE
+            set -euo pipefail
+
+            APP_PATH="/var/www/talenthub/talentBack"
+            RELEASE_DIR="$RELEASE_DIR"
+            CURRENT_LINK="$CURRENT_LINK"
+            SHARED_DIR="$SHARED_DIR"
+
+            echo "=== Preparando release: \$RELEASE_DIR ==="
+
+            # Guardar release actual para rollback
+            if [ -L "\$CURRENT_LINK" ]; then
+              PREVIOUS_LINK=\$(readlink -f "\$CURRENT_LINK")
+            else
+              PREVIOUS_LINK=""
+            fi
+
+            # Rollback si falla algo
+            trap 'if [ -n "\$PREVIOUS_LINK" ]; then ln -nfs "\$PREVIOUS_LINK" "\$CURRENT_LINK"; echo "⚠ Rollback ejecutado a \$PREVIOUS_LINK"; fi' ERR
+
+            cd "\$RELEASE_DIR"
+
+            # Enlazar storage compartido
+            ln -sfn "\$SHARED_DIR/storage" storage
+
+            # Validar y enlazar .env
+            if [ -f "\$SHARED_DIR/.env" ]; then
+              ln -sf "\$SHARED_DIR/.env" .env
+              echo "✅ .env encontrado y enlazado"
+            else
+              echo "❌ ERROR: No existe .env en \$SHARED_DIR"
+              exit 1
+            fi
+
+            # Instalar dependencias
+            composer install --no-dev --optimize-autoloader --quiet
+
+            # Ejecutar migraciones y cachés
+            php artisan migrate --force
+            php artisan config:cache
+            php artisan route:cache
+            php artisan view:cache
+
+            # Activar nuevo release (atomic swap)
+            ln -nfs "\$RELEASE_DIR" "\$CURRENT_LINK"
+            echo "✅ Release activado: \$RELEASE_DIR"
+
+            # Reload PHP-FPM o web server
+            sudo systemctl reload php-fpm || true
+
+            # Limpiar releases antiguos (mantener últimos 5)
+            cd "\$APP_PATH/releases"
+            ls -1t | tail -n +6 | xargs -r rm -rf
+
+            echo "🚀 Deploy completado exitosamente"
+          REMOTE
