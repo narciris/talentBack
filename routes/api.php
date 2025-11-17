@@ -1,6 +1,5 @@
 <?php
 
-use App\Http\Controllers\AuthController;
 use App\Http\Controllers\UserController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -11,3 +10,5 @@ Route::get('/user', function (Request $request) {
 
 Route::get('/saludo',[UserController::class,'saludo']);
 Route::get('/login',[AuthController::class,'login']);
+
+Route::get('/find/{id}',[UserController::class,'findUser']);
