@@ -21,8 +21,8 @@ class LoginUsecase
         Password $password
     )
     {
-        $user = $this->userRepository->finByUsername($username);
-      if(!$user){
+        $userModel = $this->userRepository->finByUsername($username);
+      if(!$userModel){
           throw new \InvalidArgumentException("Credenciales incorrectas");
       }
 
@@ -32,9 +32,11 @@ class LoginUsecase
       }
 
       //devolver usuario
-        $user = UserResponseDto::fromModel($user);
+        $token = $userModel->createToken('api-token')->plainTextToken;
+
+        $user = UserResponseDto::fromModel($userModel);
        return [
-           'token'=>'token',
+           'token'=>$token,
            'user'=> $user->toArray()
        ];
 

@@ -17,5 +17,9 @@ class RoutesServicesProvider extends ServiceProvider
         Route::prefix('api/auth')
             ->namespace('') // tu namespace correcto
             ->group(base_path('src/Auth/Infrastructure/Routes/api.php'));
+
+        Route::prefix('api/post')
+            ->namespace('')
+            ->group(base_path('src/Auth/Infrastructure/Routes/post.php'));
     }
 }
