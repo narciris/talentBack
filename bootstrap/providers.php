@@ -2,6 +2,6 @@
 
 return [
     App\Providers\AppServiceProvider::class,
-    \Src\Auth\Infrastructure\Services\RoutesServicesProvider::class,
+    \Src\Infrastructure\Services\RoutesServicesProvider::class,
 
 ];

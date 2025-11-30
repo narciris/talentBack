@@ -3,10 +3,10 @@
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
-use Src\Auth\Domain\Repositories\PostInterfaceRepository;
-use Src\Auth\Domain\Repositories\UserInterfaceRepository;
-use Src\Auth\Infrastructure\EloquentRepositories\EloquentPostRepositoryImpl;
-use Src\Auth\Infrastructure\EloquentRepositories\EloquentUserRepository;
+use Src\Domain\Repositories\PostInterfaceRepository;
+use Src\Domain\Repositories\UserInterfaceRepository;
+use Src\Infrastructure\EloquentRepositories\EloquentPostRepositoryImpl;
+use Src\Infrastructure\EloquentRepositories\EloquentUserRepository;
 
 class AppServiceProvider extends ServiceProvider
 {
