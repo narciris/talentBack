@@ -1,5 +1,6 @@
 <?php
-namespace Src\Infrasctruture\Controllers;
+namespace Src\Infrastructure\Controllers;
+
 use App\Models\User;
 use Src\Application\Traits\ApiResponse;
 
@@ -10,6 +11,6 @@ class GetAllUsersController {
 
     public function __invoke(){
         $users = User::all();
-        return $this->success($susers);
+        return $this->success($users);
     }
 }

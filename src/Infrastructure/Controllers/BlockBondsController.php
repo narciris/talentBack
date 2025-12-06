@@ -9,31 +9,44 @@ class BlockBondsController{
 
     use ApiResponse;
 
-public function __invoke(int $userId, int $bonoId)
-{
-    // Busca el bloqueo específico del usuario y bono
-     $deleted = Blocks::where('user_id', $userId)
-                     ->where('bono_id', $bonoId)
-                     ->delete();
+    public function __invoke(int $userId, int $bonoId)
+    {
+        $block = Blocks::where('user_id', $userId)
+            ->where('bono_id', $bonoId)
+            ->first();
 
-    // Si no existía, crear uno nuevo
-   if (!$deleted) {
-        Blocks::create([
-            'user_id' => $userId,
-            'bono_id' => $bonoId,
-            'bloqueo_vigente' => true
-        ]);
+        if ($block) {
+            $block->delete();
+
+            return $this->success(
+                [
+                    'visible' => true,
+                    'bono_bloqueado' => false
+                ],
+                "Bloqueo eliminado",
+                200
+            );
+        }
+
+        $newBlock = Blocks::firstOrCreate(
+            [
+                'user_id' => $userId,
+                'bono_id' => $bonoId
+            ],
+            [
+                'bloqueo_vigente' => true
+            ]
+        );
+
+        return $this->success(
+            [
+                'visible' => false,
+                'bono_bloqueado' => true
+            ],
+            "Bloqueo creado",
+            200
+        );
     }
-
-    // Retorna el estado actual
-    return $this->success(
-         ['visible' => !$deleted,
-         "bono_bloqueado"=>true] ,
-        "Operación ejecutada",
-        200,
-       // true si se creó, false si se eliminó
-    );
-}
 
 
 
